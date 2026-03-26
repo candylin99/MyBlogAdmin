@@ -1,0 +1,34 @@
+name: PR Title Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-pr-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate title format for protected PRs
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+
+          pattern='\[[^][]+-[^][]+\]|【[^【】]+-[^【】]+】'
+
+          if [[ ! "$PR_TITLE" =~ $pattern ]]; then
+            echo "Error: PRs targeting master or release/pear must include [xx-xx] or 【xx-xx】 in the title, with a '-' inside the brackets."
+            echo "Current title: $PR_TITLE"
+            echo "Examples:"
+            echo "  [RTC-12345] fix return summary"
+            echo "  feat: 【shopper-refactor】 sync copy"
+            exit 1
+          fi
+
+          echo "PR title format check passed: $PR_TITLE"
